@@ -13,21 +13,41 @@ jobs:
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
-        install: make pkg-config diffutils mingw-w64-x86_64-nasm mingw-w64-x86_64-gcc mingw-w64-x86_64-libwebp mingw-w64-x86_64-rav1e
+        install: make pkg-config diffutils mingw-w64-x86_64-nasm mingw-w64-x86_64-gcc mingw-w64-x86_64-libwebp mingw-w64-x86_64-rust mingw-w64-x86_64-cargo-c
     
-    - shell: msys2 {0}
-      run: cat /mingw64/lib/pkgconfig/rav1e.pc
-
+    - name: Restore rav1e cache
+      id: cache-restore
+      uses: actions/cache/restore@v3
+      with:
+        key: windows-rav1e-0.6.6
+        path: D:/a/_temp/msys64/mingw64/**/*rav1e*
+    
+    - name: Build rav1e
+      if: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
+      shell: msys2 {0}
+      run: |
+        wget -q https://github.com/xiph/rav1e/archive/v0.6.6.tar.gz
+        echo "723696e93acbe03666213fbc559044f3cae5b8b888b2ddae667402403cff51e5 v0.6.6.tar.gz" | sha256sum --status -c -
+        tar xf v0.6.6.tar.gz
+        cd rav1e-0.6.6
+        RUSTFLAGS="-C target-feature=+crt-static" cargo cinstall --release --prefix /mingw64
+    
+    - name: Save rav1e cache
+      if: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v3
+      with:
+        key: windows-rav1e-0.6.6
+        path: D:/a/_temp/msys64/mingw64/**/*rav1e*
+    
     - name: Setup ffmpeg
       shell: msys2 {0}
       run: |
-        wget https://ffmpeg.org/releases/ffmpeg-6.0.tar.bz2
+        wget -q https://ffmpeg.org/releases/ffmpeg-6.0.tar.bz2
         echo "47d062731c9f66a78380e35a19aac77cebceccd1c7cc309b9c82343ffc430c3d  ffmpeg-6.0.tar.bz2" | sha256sum -c -
         tar xf ffmpeg-6.0.tar.bz2
         cd ffmpeg-6.0
         sed -i 's/add_ldexeflags -fPIE -pie/add_ldexeflags -fPIE -static-pie/' configure
-        ./configure --target-os=mingw32 --extra-ldflags=-static --extra-cflags=-static --pkg-config-flags=--static --disable-debug --disable-shared --disable-ffplay --disable-ffprobe --enable-version3 --enable-static --enable-small --disable-everything --disable-network --disable-debug --disable-doc --disable-iconv --disable-bzlib --disable-libxcb-shm --disable-libxcb --disable-lzma --enable-protocol=file --enable-filter=scale --enable-demuxer=image2 --enable-demuxer=mov --enable-encoder=mjpeg --enable-decoder=mjpeg --enable-demuxer=mjpeg --enable-muxer=mjpeg --enable-encoder=librav1e --enable-decoder=av1 --enable-decoder=av1 --enable-demuxer=av1 --enable-muxer=avif --enable-encoder=libwebp --enable-encoder=libwebp_anim --enable-decoder=webp --enable-muxer=webp --enable-encoder=png --enable-decoder=png --enable-encoder=apng --enable-decoder=apng --enable-demuxer=apng --enable-muxer=apng --enable-encoder=gif --enable-decoder=gif --enable-demuxer=gif --enable-libwebp --enable-librav1e \
-        || (cat ffbuild/config.log ; false)
+        ./configure --target-os=mingw32 --pkg-config-flags=--static --extra-ldflags=-static --extra-cflags=-static --disable-autodetect --disable-debug --disable-shared --disable-ffplay --disable-ffprobe  --enable-static --enable-small --disable-everything --disable-network --disable-debug --disable-doc --disable-iconv --disable-bzlib --disable-libxcb-shm --disable-libxcb --disable-lzma --enable-protocol=file --enable-filter=scale --enable-demuxer=image2 --enable-demuxer=mov --enable-encoder=mjpeg --enable-decoder=mjpeg --enable-demuxer=mjpeg --enable-muxer=mjpeg --enable-encoder=librav1e --enable-decoder=av1 --enable-decoder=av1 --enable-demuxer=av1 --enable-muxer=avif --enable-encoder=libwebp --enable-encoder=libwebp_anim --enable-decoder=webp --enable-muxer=webp --enable-encoder=png --enable-decoder=png --enable-encoder=apng --enable-decoder=apng --enable-demuxer=apng --enable-muxer=apng --enable-encoder=gif --enable-decoder=gif --enable-demuxer=gif --enable-zlib --enable-libwebp --enable-librav1e
     
     - name: Build ffmpeg
       shell: msys2 {0}
@@ -36,16 +56,23 @@ jobs:
     - name: Show that it's statically linked
       shell: msys2 {0}
       run: ldd ffmpeg-6.0/ffmpeg
-
+    
     - name: Show used build configuration
       run: ffmpeg-6.0/ffmpeg -hide_banner -buildconf
-
+    
     - name: Show available codecs
       run: ffmpeg-6.0/ffmpeg -hide_banner -codecs
-
+    
     - name: Show available formats
       run: ffmpeg-6.0/ffmpeg -hide_banner -formats
-
+    
+    - name: Upload config.log
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: config.log
+        path: ffmpeg-6.0/ffbuild/config.log
+    
     - name: Upload ffmpeg
       uses: actions/upload-artifact@v3
       with:

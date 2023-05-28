@@ -18,34 +18,37 @@ jobs:
         packages: build-base nasm zlib-dev zlib-static libwebp-dev libwebp-static rav1e-dev rav1e-static
     
     - name: Setup ffmpeg
-      shell: alpine.sh --root {0}
+      shell: alpine.sh {0}
       run: |
-        wget https://ffmpeg.org/releases/ffmpeg-6.0.tar.bz2
-        echo "47d062731c9f66a78380e35a19aac77cebceccd1c7cc309b9c82343ffc430c3d  ffmpeg-6.0.tar.bz2" | sha256sum -c - 
+        wget -q https://ffmpeg.org/releases/ffmpeg-6.0.tar.bz2
+        echo "47d062731c9f66a78380e35a19aac77cebceccd1c7cc309b9c82343ffc430c3d  ffmpeg-6.0.tar.bz2" | sha256sum -c -
         tar xf ffmpeg-6.0.tar.bz2
         cd ffmpeg-6.0
         sed -i 's/add_ldexeflags -fPIE -pie/add_ldexeflags -fPIE -static-pie/' configure
-        ./configure --toolchain=hardened --pkg-config-flags=--static --disable-debug --disable-shared --disable-ffplay --disable-ffprobe  --enable-static --enable-small --disable-everything --disable-network --disable-debug --disable-doc --disable-iconv --disable-bzlib --disable-libxcb-shm --disable-libxcb --disable-lzma --enable-protocol=file --enable-filter=scale --enable-demuxer=image2 --enable-demuxer=mov --enable-encoder=mjpeg --enable-decoder=mjpeg --enable-demuxer=mjpeg --enable-muxer=mjpeg --enable-encoder=librav1e --enable-decoder=av1 --enable-decoder=av1 --enable-demuxer=av1 --enable-muxer=avif --enable-encoder=libwebp --enable-encoder=libwebp_anim --enable-decoder=webp --enable-muxer=webp --enable-encoder=png --enable-decoder=png --enable-encoder=apng --enable-decoder=apng --enable-demuxer=apng --enable-muxer=apng --enable-encoder=gif --enable-decoder=gif --enable-demuxer=gif --enable-libwebp --enable-librav1e \
-        || (cat ffbuild/config.log ; false)
+        ./configure --pkg-config-flags=--static --extra-ldflags=-static --extra-cflags=-static --disable-autodetect --disable-debug --disable-shared --disable-ffplay --disable-ffprobe  --enable-static --enable-small --disable-everything --disable-network --disable-debug --disable-doc --disable-iconv --disable-bzlib --disable-libxcb-shm --disable-libxcb --disable-lzma --enable-protocol=file --enable-filter=scale --enable-demuxer=image2 --enable-demuxer=mov --enable-encoder=mjpeg --enable-decoder=mjpeg --enable-demuxer=mjpeg --enable-muxer=mjpeg --enable-encoder=librav1e --enable-decoder=av1 --enable-decoder=av1 --enable-demuxer=av1 --enable-muxer=avif --enable-encoder=libwebp --enable-encoder=libwebp_anim --enable-decoder=webp --enable-muxer=webp --enable-encoder=png --enable-decoder=png --enable-encoder=apng --enable-decoder=apng --enable-demuxer=apng --enable-muxer=apng --enable-encoder=gif --enable-decoder=gif --enable-demuxer=gif --enable-zlib --enable-libwebp --enable-librav1e
     
     - name: Build ffmpeg
-      shell: alpine.sh --root {0}
+      shell: alpine.sh {0}
       run: cd ffmpeg-6.0 && make -j $(nproc)
     
-    - name: Configure permissions
-      run: sudo chown -R runner:runner ffmpeg-6.0
-    
     - name: Show that it's statically linked
-      run: ldd ffmpeg-6.0/ffmpeg
-      
+      run: ldd ffmpeg-6.0/ffmpeg || true
+    
     - name: Show used build configuration
       run: ffmpeg-6.0/ffmpeg -hide_banner -buildconf
     
     - name: Show available codecs
       run: ffmpeg-6.0/ffmpeg -hide_banner -codecs
-      
+    
     - name: Show available formats
       run: ffmpeg-6.0/ffmpeg -hide_banner -formats
+    
+    - name: Upload config.log
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: config.log
+        path: ffmpeg-6.0/ffbuild/config.log
     
     - name: Upload ffmpeg
       uses: actions/upload-artifact@v3
