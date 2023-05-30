@@ -1,14 +1,12 @@
-name: Build Ffmpeg For Linux
+name: Build ffmpeg for linux
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/linux.yml
+  workflow_call:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: Setup alpine environment
       uses: jirutka/setup-alpine@v1
@@ -47,11 +45,11 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: config.log
+        name: linux-config-log
         path: ffmpeg-6.0/ffbuild/config.log
     
     - name: Upload ffmpeg
       uses: actions/upload-artifact@v3
       with:
-        name: ffmpeg-linux-x86_64
+        name: linux-x86_64
         path: ffmpeg-6.0/ffmpeg

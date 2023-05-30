@@ -1,14 +1,12 @@
-name: Build Ffmpeg For Windows
+name: Build ffmpeg for windows
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/windows.yml
+  workflow_call:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: windows-latest
     steps:
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
@@ -20,9 +18,12 @@ jobs:
       uses: actions/cache/restore@v3
       with:
         key: windows-rav1e-0.6.6
-        path: D:/a/_temp/msys64/mingw64/**/*rav1e*
+        path: |
+          D:/a/_temp/msys64/mingw64/lib/**/*rav1e*
+          D:/a/_temp/msys64/mingw64/bin/**/*rav1e*
+          D:/a/_temp/msys64/mingw64/include/**/*rav1e*
     
-    - name: Build rav1e
+    - name: Build and install rav1e
       if: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
       shell: msys2 {0}
       run: |
@@ -37,7 +38,10 @@ jobs:
       uses: actions/cache/save@v3
       with:
         key: windows-rav1e-0.6.6
-        path: D:/a/_temp/msys64/mingw64/**/*rav1e*
+        path: |
+          D:/a/_temp/msys64/mingw64/lib/**/*rav1e*
+          D:/a/_temp/msys64/mingw64/bin/**/*rav1e*
+          D:/a/_temp/msys64/mingw64/include/**/*rav1e*
     
     - name: Setup ffmpeg
       shell: msys2 {0}
@@ -70,11 +74,11 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: config.log
+        name: windows-config-log
         path: ffmpeg-6.0/ffbuild/config.log
     
     - name: Upload ffmpeg
       uses: actions/upload-artifact@v3
       with:
-        name: ffmpeg-windows-x86_64.exe
+        name: windows-x86_64
         path: ffmpeg-6.0/ffmpeg.exe

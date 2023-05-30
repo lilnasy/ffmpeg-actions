@@ -1,0 +1,41 @@
+name: Build and release ffmpeg binaries
+
+on:
+  workflow_dispatch:
+
+jobs:
+  
+  linux:
+    uses: ./.github/workflows/linux.yml
+  
+  macos:
+    uses: ./.github/workflows/macos.yml
+  
+  windows:
+    uses: ./.github/workflows/windows.yml
+  
+  release:
+    name: Create release
+    needs: [ linux, windows, macos ]
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Setup repo
+      uses: actions/checkout@v3
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Create release
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        mv linux-x86_64/ffmpeg ffmpeg-linux-x86_64
+        mv macos-x86_64/ffmpeg ffmpeg-macos-x86_64
+        mv windows-x86_64/ffmpeg.exe ffmpeg-windows-x86_64.exe
+        RELDATE="$(date +'%Y-%m-%d %H:%M')"
+        MESSAGE="Image-only static ffmpeg binaries ($RELDATE)"
+        TAGNAME="ffmpeg-$(date +'%Y-%m-%d-%H-%M')"
+        hub release create $(for filename in ffmpeg-*; do echo -a $filename; done) -m "$MESSAGE" "$TAGNAME"
+        echo "tag_name=${TAGNAME}" >> $GITHUB_OUTPUT
+        echo "rel_date=${RELDATE}" >> $GITHUB_OUTPUT
