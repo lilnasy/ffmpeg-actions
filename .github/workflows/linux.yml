@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Setup alpine environment
       uses: jirutka/setup-alpine@v1
@@ -25,7 +25,7 @@ jobs:
         tar xf ffmpeg-6.0.tar.bz2
         cd ffmpeg-6.0
         sed -i 's/add_ldexeflags -fPIE -pie/add_ldexeflags -fPIE -static-pie/' configure
-        ./configure --pkg-config-flags=--static --extra-ldflags=-static --extra-cflags=-static --disable-autodetect --disable-debug --disable-shared --disable-ffplay --disable-ffprobe  --enable-static --enable-small --disable-everything --disable-network --disable-debug --disable-doc --disable-iconv --disable-bzlib --disable-libxcb-shm --disable-libxcb --disable-lzma --enable-protocol=file --enable-filter=scale --enable-demuxer=image2 --enable-demuxer=mov --enable-encoder=mjpeg --enable-decoder=mjpeg --enable-demuxer=mjpeg --enable-muxer=mjpeg --enable-encoder=librav1e --enable-decoder=av1 --enable-decoder=av1 --enable-demuxer=av1 --enable-muxer=avif --enable-encoder=libwebp --enable-encoder=libwebp_anim --enable-decoder=webp --enable-muxer=webp --enable-encoder=png --enable-decoder=png --enable-encoder=apng --enable-decoder=apng --enable-demuxer=apng --enable-muxer=apng --enable-encoder=gif --enable-decoder=gif --enable-demuxer=gif --enable-zlib --enable-libwebp --enable-librav1e
+        ./configure --pkg-config-flags=--static --extra-ldflags=-static --extra-cflags=-static --enable-static --enable-small --enable-zlib --enable-libwebp --enable-librav1e --disable-autodetect --disable-debug --disable-shared --disable-ffplay --disable-ffprobe --disable-everything --disable-network --disable-debug --disable-doc --disable-iconv --disable-bzlib --disable-libxcb-shm --disable-libxcb --disable-lzma --enable-protocol=file --enable-filter=scale --enable-demuxer=image2 --enable-demuxer=mov --enable-encoder=mjpeg --enable-decoder=mjpeg --enable-demuxer=mjpeg --enable-muxer=mjpeg --enable-encoder=librav1e --enable-decoder=av1 --enable-decoder=av1 --enable-demuxer=av1 --enable-muxer=avif --enable-encoder=libwebp --enable-encoder=libwebp_anim --enable-decoder=webp --enable-muxer=webp --enable-encoder=png --enable-decoder=png --enable-encoder=apng --enable-decoder=apng --enable-demuxer=apng --enable-muxer=apng --enable-encoder=gif --enable-decoder=gif --enable-demuxer=gif
     
     - name: Build ffmpeg
       shell: alpine.sh {0}
